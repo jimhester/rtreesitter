@@ -1,0 +1,11 @@
+PKG_LIBS = tree-sitter/libtree-sitter.a
+PKG_CPPFLAGS = -Itree-sitter/lib/include
+
+$(SHLIB): tree-sitter/libtree-sitter.a
+
+tree-sitter/libtree-sitter.a:
+	$(MAKE) --directory=tree-sitter CC="$(CC)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS) $(CPICFALGS)" AR="$(AR)" libtree-sitter.a
+
+clean:
+	$(MAKE) --directory=tree-sitter clean
+	rm -f *o
