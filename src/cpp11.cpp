@@ -25,17 +25,62 @@ extern "C" SEXP _rtreesitter_tree_sexp(SEXP t) {
     return cpp11::as_sexp(tree_sexp(cpp11::as_cpp<cpp11::decay_t<rts_tree>>(t)));
   END_CPP11
 }
+// code.cpp
+std::string node_sexp(rts_node n);
+extern "C" SEXP _rtreesitter_node_sexp(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_sexp(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
+// code.cpp
+size_t node_get_child_count(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_child_count(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_child_count(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
+// code.cpp
+size_t node_get_named_child_count(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_named_child_count(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_named_child_count(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
+// code.cpp
+list node_get_children(rts_node self);
+extern "C" SEXP _rtreesitter_node_get_children(SEXP self) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_children(cpp11::as_cpp<cpp11::decay_t<rts_node>>(self)));
+  END_CPP11
+}
+// code.cpp
+rts_node tree_root(rts_tree t);
+extern "C" SEXP _rtreesitter_tree_root(SEXP t) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(tree_root(cpp11::as_cpp<cpp11::decay_t<rts_tree>>(t)));
+  END_CPP11
+}
 
 extern "C" {
 /* .Call calls */
+extern SEXP _rtreesitter_node_get_child_count(SEXP);
+extern SEXP _rtreesitter_node_get_children(SEXP);
+extern SEXP _rtreesitter_node_get_named_child_count(SEXP);
+extern SEXP _rtreesitter_node_sexp(SEXP);
 extern SEXP _rtreesitter_parser_new(SEXP);
 extern SEXP _rtreesitter_parser_parse(SEXP, SEXP);
+extern SEXP _rtreesitter_tree_root(SEXP);
 extern SEXP _rtreesitter_tree_sexp(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_rtreesitter_parser_new",   (DL_FUNC) &_rtreesitter_parser_new,   1},
-    {"_rtreesitter_parser_parse", (DL_FUNC) &_rtreesitter_parser_parse, 2},
-    {"_rtreesitter_tree_sexp",    (DL_FUNC) &_rtreesitter_tree_sexp,    1},
+    {"_rtreesitter_node_get_child_count",       (DL_FUNC) &_rtreesitter_node_get_child_count,       1},
+    {"_rtreesitter_node_get_children",          (DL_FUNC) &_rtreesitter_node_get_children,          1},
+    {"_rtreesitter_node_get_named_child_count", (DL_FUNC) &_rtreesitter_node_get_named_child_count, 1},
+    {"_rtreesitter_node_sexp",                  (DL_FUNC) &_rtreesitter_node_sexp,                  1},
+    {"_rtreesitter_parser_new",                 (DL_FUNC) &_rtreesitter_parser_new,                 1},
+    {"_rtreesitter_parser_parse",               (DL_FUNC) &_rtreesitter_parser_parse,               2},
+    {"_rtreesitter_tree_root",                  (DL_FUNC) &_rtreesitter_tree_root,                  1},
+    {"_rtreesitter_tree_sexp",                  (DL_FUNC) &_rtreesitter_tree_sexp,                  1},
     {NULL, NULL, 0}
 };
 }
