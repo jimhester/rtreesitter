@@ -1,5 +1,4 @@
 #include "rtreesitter_types.h"
-using namespace cpp11;
 
 static TSTreeCursor default_cursor = {0, 0, {0}};
 
@@ -19,13 +18,13 @@ size_t node_get_named_child_count(rts_node n) {
 }
 
 [[cpp11::register]]
-list node_get_children(rts_node self) {
+cpp11::list node_get_children(rts_node self) {
   R_xlen_t n = ts_node_child_count(self->node);
   if (n == 0) {
-    return list();
+    return cpp11::list();
   }
 
-  writable::list res(n);
+  cpp11::writable::list res(n);
 
   ts_tree_cursor_reset(&default_cursor, self->node);
   ts_tree_cursor_goto_first_child(&default_cursor);
@@ -53,13 +52,13 @@ double node_get_end_byte(rts_node n) {
 }
 
 [[cpp11::register]]
-writable::doubles node_get_start_point(rts_node n) {
+cpp11::writable::doubles node_get_start_point(rts_node n) {
   TSPoint point = ts_node_start_point(n->node);
   return {static_cast<double>(point.row), static_cast<double>(point.column)};
 }
 
 [[cpp11::register]]
-writable::doubles node_get_end_point(rts_node n) {
+cpp11::writable::doubles node_get_end_point(rts_node n) {
   TSPoint point = ts_node_end_point(n->node);
   return {static_cast<double>(point.row), static_cast<double>(point.column)};
 }

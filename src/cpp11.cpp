@@ -54,7 +54,7 @@ extern "C" SEXP _rtreesitter_node_get_named_child_count(SEXP n) {
   END_CPP11
 }
 // node.cpp
-list node_get_children(rts_node self);
+cpp11::list node_get_children(rts_node self);
 extern "C" SEXP _rtreesitter_node_get_children(SEXP self) {
   BEGIN_CPP11
     return cpp11::as_sexp(node_get_children(cpp11::as_cpp<cpp11::decay_t<rts_node>>(self)));
@@ -82,14 +82,14 @@ extern "C" SEXP _rtreesitter_node_get_end_byte(SEXP n) {
   END_CPP11
 }
 // node.cpp
-writable::doubles node_get_start_point(rts_node n);
+cpp11::writable::doubles node_get_start_point(rts_node n);
 extern "C" SEXP _rtreesitter_node_get_start_point(SEXP n) {
   BEGIN_CPP11
     return cpp11::as_sexp(node_get_start_point(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
   END_CPP11
 }
 // node.cpp
-writable::doubles node_get_end_point(rts_node n);
+cpp11::writable::doubles node_get_end_point(rts_node n);
 extern "C" SEXP _rtreesitter_node_get_end_point(SEXP n) {
   BEGIN_CPP11
     return cpp11::as_sexp(node_get_end_point(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
