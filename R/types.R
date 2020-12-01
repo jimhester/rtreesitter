@@ -1,15 +1,23 @@
+#' A parser object
+#'
 #' @export
 rts_parser <- R6::R6Class("rts_parser",
   private = list(
     ptr = NULL
   ),
   public = list(
+    #' @description
+    #' Create a new parser object
+    #' @param language The language to parse
+    #' @return A new `rts_parser` object
     initialize = function(language) {
       private$ptr <- parser_new(language)
     },
+    #' @param ... Additional parameters ignored.
     print = function(...) {
       cat("{rts_parser}\n")
     },
+    #' @param text The text to parse.
     parse = function(text) {
       rts_tree$new(parser_parse(private$ptr, text))
     }
