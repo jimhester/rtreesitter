@@ -63,3 +63,8 @@ writable::doubles node_get_end_point(rts_node n) {
   TSPoint point = ts_node_end_point(n->node);
   return {static_cast<double>(point.row), static_cast<double>(point.column)};
 }
+
+[[cpp11::register]]
+bool node_get_is_named(rts_node n) {
+  return ts_node_is_named(n->node);
+}

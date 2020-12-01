@@ -7,51 +7,35 @@ test_that("children works", {
   expect_equal(root_node$end_byte, 18)
   expect_equal(root_node$start_point, rts_point$new(0, 0))
   expect_equal(root_node$end_point, rts_point$new(1, 7))
+
+  fn_node <- root_node$children[[1]]
+  expect_equal(fn_node$type, "function_definition")
+  expect_equal(fn_node$start_byte, 0)
+  expect_equal(fn_node$end_byte, 18)
+  expect_equal(fn_node$start_point, rts_point$new(0, 0))
+  expect_equal(fn_node$end_point, rts_point$new(1, 7))
+
+  def_node <- fn_node$children[[1]]
+  expect_equal(def_node$type, "def")
+  expect_equal(def_node$is_named, FALSE)
+
+  id_node <-  fn_node$children[[2]]
+  expect_equal(id_node$type, "identifier")
+  expect_equal(id_node$is_named, TRUE)
+  expect_equal(length(id_node$children), 0)
+
+  params_node <-  fn_node$children[[3]]
+  expect_equal(params_node$type, "parameters")
+  expect_equal(params_node$is_named, TRUE)
+
+  colon_node <-  fn_node$children[[4]]
+  expect_equal(colon_node$type, ":")
+  expect_equal(colon_node$is_named, FALSE)
+
+  statement_node <-  fn_node$children[[5]]
+  expect_equal(statement_node$type, "block")
+  expect_equal(statement_node$is_named, TRUE)
 })
-
-    #def test_children(self):
-        #parser = Parser()
-        #parser.set_language(PYTHON)
-        #tree = parser.parse(b"def foo():\n  bar()")
-
-        #root_node = tree.root_node
-        #self.assertEqual(root_node.type, "module")
-        #self.assertEqual(root_node.start_byte, 0)
-        #self.assertEqual(root_node.end_byte, 18)
-        #self.assertEqual(root_node.start_point, (0, 0))
-        #self.assertEqual(root_node.end_point, (1, 7))
-
-        ## List object is reused
-        #self.assertIs(root_node.children, root_node.children)
-
-        #fn_node = root_node.children[0]
-        #self.assertEqual(fn_node.type, "function_definition")
-        #self.assertEqual(fn_node.start_byte, 0)
-        #self.assertEqual(fn_node.end_byte, 18)
-        #self.assertEqual(fn_node.start_point, (0, 0))
-        #self.assertEqual(fn_node.end_point, (1, 7))
-
-        #def_node = fn_node.children[0]
-        #self.assertEqual(def_node.type, "def")
-        #self.assertEqual(def_node.is_named, False)
-
-        #id_node = fn_node.children[1]
-        #self.assertEqual(id_node.type, "identifier")
-        #self.assertEqual(id_node.is_named, True)
-        #self.assertEqual(len(id_node.children), 0)
-
-        #params_node = fn_node.children[2]
-        #self.assertEqual(params_node.type, "parameters")
-        #self.assertEqual(params_node.is_named, True)
-
-        #colon_node = fn_node.children[3]
-        #self.assertEqual(colon_node.type, ":")
-        #self.assertEqual(colon_node.is_named, False)
-
-        #statement_node = fn_node.children[4]
-        #self.assertEqual(statement_node.type, "block")
-        #self.assertEqual(statement_node.is_named, True)
-
 
 # python tests from https://github.com/tree-sitter/py-tree-sitter/blob/master/tests/test_tree_sitter.py
 #class TestNode(TestCase):

@@ -56,6 +56,7 @@ rts_node <- R6::R6Class("rts_node",
       res <- node_get_end_point(private$ptr)
       rts_point$new(res[[1]], res[[2]])
     },
+    is_named = function() node_get_is_named(private$ptr),
     children = function() {
       lapply(node_get_children(private$ptr), rts_node$new)
     }

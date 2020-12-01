@@ -51,3 +51,7 @@ node_get_start_point <- function(n) {
 node_get_end_point <- function(n) {
   .Call("_rtreesitter_node_get_end_point", n, PACKAGE = "rtreesitter")
 }
+
+node_get_is_named <- function(n) {
+  .Call("_rtreesitter_node_get_is_named", n, PACKAGE = "rtreesitter")
+}

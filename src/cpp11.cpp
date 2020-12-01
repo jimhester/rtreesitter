@@ -95,6 +95,13 @@ extern "C" SEXP _rtreesitter_node_get_end_point(SEXP n) {
     return cpp11::as_sexp(node_get_end_point(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
   END_CPP11
 }
+// node.cpp
+bool node_get_is_named(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_is_named(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_is_named(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
 
 extern "C" {
 /* .Call calls */
@@ -102,6 +109,7 @@ extern SEXP _rtreesitter_node_get_child_count(SEXP);
 extern SEXP _rtreesitter_node_get_children(SEXP);
 extern SEXP _rtreesitter_node_get_end_byte(SEXP);
 extern SEXP _rtreesitter_node_get_end_point(SEXP);
+extern SEXP _rtreesitter_node_get_is_named(SEXP);
 extern SEXP _rtreesitter_node_get_named_child_count(SEXP);
 extern SEXP _rtreesitter_node_get_start_byte(SEXP);
 extern SEXP _rtreesitter_node_get_start_point(SEXP);
@@ -117,6 +125,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rtreesitter_node_get_children",          (DL_FUNC) &_rtreesitter_node_get_children,          1},
     {"_rtreesitter_node_get_end_byte",          (DL_FUNC) &_rtreesitter_node_get_end_byte,          1},
     {"_rtreesitter_node_get_end_point",         (DL_FUNC) &_rtreesitter_node_get_end_point,         1},
+    {"_rtreesitter_node_get_is_named",          (DL_FUNC) &_rtreesitter_node_get_is_named,          1},
     {"_rtreesitter_node_get_named_child_count", (DL_FUNC) &_rtreesitter_node_get_named_child_count, 1},
     {"_rtreesitter_node_get_start_byte",        (DL_FUNC) &_rtreesitter_node_get_start_byte,        1},
     {"_rtreesitter_node_get_start_point",       (DL_FUNC) &_rtreesitter_node_get_start_point,       1},
