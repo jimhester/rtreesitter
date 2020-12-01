@@ -12,6 +12,10 @@ tree_sexp <- function(t) {
   .Call("_rtreesitter_tree_sexp", t, PACKAGE = "rtreesitter")
 }
 
+tree_root <- function(t) {
+  .Call("_rtreesitter_tree_root", t, PACKAGE = "rtreesitter")
+}
+
 node_sexp <- function(n) {
   .Call("_rtreesitter_node_sexp", n, PACKAGE = "rtreesitter")
 }
@@ -28,6 +32,6 @@ node_get_children <- function(self) {
   .Call("_rtreesitter_node_get_children", self, PACKAGE = "rtreesitter")
 }
 
-tree_root <- function(t) {
-  .Call("_rtreesitter_tree_root", t, PACKAGE = "rtreesitter")
+node_get_type <- function(n) {
+  .Call("_rtreesitter_node_get_type", n, PACKAGE = "rtreesitter")
 }

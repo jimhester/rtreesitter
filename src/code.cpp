@@ -1,8 +1,7 @@
-#include "rtreesitter_types.hpp"
+#include "rtreesitter_types.h"
 #include "R_ext/Rdynload.h"
+#include <sstream>
 using namespace cpp11;
-
-static TSTreeCursor default_cursor = {0, 0, {0}};
 
 [[cpp11::register]]
 rts_parser parser_new(std::string language) {
@@ -27,41 +26,42 @@ std::string tree_sexp(rts_tree t) {
   return out;
 }
 
-[[cpp11::register]]
-std::string node_sexp(rts_node n) {
-  return ts_node_string(n->node);
-}
+//[[cpp11::register]]
+//std::string layout_sexp(std::string str, int level) {
+  //std::stringstream s;
+  //layout_sexp_internal(str, s, 0);
+  //return s.str();
+//}
 
-[[cpp11::register]]
-size_t node_get_child_count(rts_node n) {
-  return ts_node_child_count(n->node);
-}
-
-[[cpp11::register]]
-size_t node_get_named_child_count(rts_node n) {
-  return ts_node_named_child_count(n->node);
-}
-
-[[cpp11::register]]
-list node_get_children(rts_node self) {
-  R_xlen_t n = ts_node_child_count(self->node);
-  if (n == 0) {
-    return list();
-  }
-
-  writable::list res(n);
-
-  ts_tree_cursor_reset(&default_cursor, self->node);
-  ts_tree_cursor_goto_first_child(&default_cursor);
-  R_xlen_t i = 0;
-  do {
-    res[i++] = rts_node(new ast_node(ts_tree_cursor_current_node(&default_cursor), self->tree));
-  } while (ts_tree_cursor_goto_next_sibling(&default_cursor));
-
-  res.attr("class") = "rts_node_list";
-
-  return res;
-}
+//void layout_sexp_internal(const std::string& input, std::stringstream& output, int level) {
+  //REprintf("%i %s\n", level, input.c_str());
+  //size_t i = 0;
+  //while (i < input.length()) {
+    //switch (input[i]) {
+      //case ')': --level;
+      //case '(': ++level;
+                //output << '\n' << std::string(level, ' ');
+      //default:
+                //output << input[i];
+    //}
+  //}
+  //if (input[i] == '(') {
+    //size_t start = i;
+    //do {++i; } while(!(str[i] == ' ' || str[i] == ')'));
+    //if (str[i] == ' ') {
+      //s << '\n' << std::string((level + 1) * 2, ' ')
+        //do {++i; } while(str[i] == ' ');
+    //}
+    //s << layout_sexp_internal(str.substr(start, i), output, level + 1);
+    //return;
+  //} else if (input[i] == ')') {
+    //size_t start = i;
+    //do {++i; --level; } while(str[i] == ')');
+    //s << str.substr(start, i);
+    //return;
+  //}
+  //++i;
+//}
 
 [[cpp11::register]]
 rts_node tree_root(rts_tree t) {

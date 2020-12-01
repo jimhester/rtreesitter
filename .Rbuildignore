@@ -1,1 +1,8 @@
 ^README\.Rmd$
+^src/tree-sitter/test
+^src/tree-sitter/\.
+^src/tree-sitter/.+/\.
+^\.clangd$
+^compile_commands\.json$
+^script.R$
+^LICENSE\.md$

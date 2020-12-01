@@ -50,7 +50,6 @@ build_library("build/my-languages.so",
     "vendor/tree-sitter-go")
 )
 
-out <- dyn.load("build/my-languages.so")
 p_r <- parser_new("tree_sitter_R")
 tree_sexp(parser_parse(p_r, "x <- function(x) 1"))
 

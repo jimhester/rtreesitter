@@ -6,5 +6,6 @@ build_library <- function(output_path, repo_paths) {
     callr::rcmd("COMPILE", c(sprintf("PKG_CPPFLAGS=-I%s", repo_src), repo_files), fail_on_status = TRUE)
   }
   callr::rcmd("SHLIB", c("--output", output_path, repo_files), fail_on_status = TRUE)
-  invisible()
+  out <- dyn.load(output_path)
+  invisible(out)
 }
