@@ -16,6 +16,8 @@ knitr::opts_chunk$set(
 # rtreesitter
 
 <!-- badges: start -->
+[![Codecov test coverage](https://codecov.io/gh/jimhester/rtreesitter/branch/main/graph/badge.svg)](https://codecov.io/gh/jimhester/rtreesitter?branch=main)
+[![R-CMD-check](https://github.com/jimhester/rtreesitter/workflows/R-CMD-check/badge.svg)](https://github.com/jimhester/rtreesitter/actions)
 <!-- badges: end -->
 
 rtreesitter provides R bindings to the [tree-sitter](https://tree-sitter.github.io/tree-sitter/) parsing library.
@@ -41,38 +43,35 @@ git clone https://github.com/tree-sitter/tree-sitter-go
 ```
 
 ```{r}
-pkgload::load_all("~/p/rtreesitter")
+library(rtreesitter)
 
-build_library("build/my-languages.so",
-  c("vendor/tree-sitter-r",
-    "vendor/tree-sitter-python",
-    "vendor/tree-sitter-javascript",
-    "vendor/tree-sitter-go")
+
+lib_dir <- file.path(tempdir(), "rtreesitter")
+lib <- file.path(lib_dir, "languages.so")
+
+repos <- c(
+  "tree-sitter/tree-sitter-python",
+  "tree-sitter/tree-sitter-javascript",
+  "jimhester/tree-sitter-r"
 )
+for (repo in repos) {
+  processx::run("git", c("clone", "--depth=1", sprintf("https://github.com/%s", repo), file.path(lib_dir, basename(repo))))
+}
 
-p_r <- parser_new("tree_sitter_R")
-tree_sexp(parser_parse(p_r, "x <- function(x) 1"))
+build_library(lib, file.path(lib_dir, basename(repos)))
 
-p_py <- parser_new("tree_sitter_python")
-tree_sexp(parser_parse(p_py,
-"
+p_r <- rts_parser$new("tree_sitter_R")
+p_r$parse("x <- function(x) 1")
+
+p_py <- rts_parser$new("tree_sitter_python")
+p_py$parse("
 def foo():
     if bar:
        baz()
-"))
+")
 
-
-p_go <- parser_new("tree_sitter_go")
-
-tree_sexp(parser_parse(p_go,
-'package main
-import "fmt"
-func main() {
-    fmt.Println("hello world")
-}'))
-
-p_js <- parser_new("tree_sitter_javascript")
-tree_sexp(parser_parse(p_js, '
+p_js <- rts_parser$new("tree_sitter_javascript")
+p_js$parse('
     let name = "world";
-    alert("hello " + name);'))
+    alert("hello " + name);')
 ```

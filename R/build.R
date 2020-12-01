@@ -1,3 +1,7 @@
+#' Build a tree sitter library
+#' @param output_path Path where the shared library should be built.
+#' @param repo_paths Paths to one or more local tree-sitter repositories.
+#' @export
 build_library <- function(output_path, repo_paths) {
   repo_files <- character()
   for (repo in repo_paths) {

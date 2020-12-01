@@ -6,3 +6,5 @@
 ^compile_commands\.json$
 ^script.R$
 ^LICENSE\.md$
+^codecov\.yml$
+^\.github$

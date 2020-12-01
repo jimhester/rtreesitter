@@ -1,3 +1,4 @@
+#' @export
 rts_parser <- R6::R6Class("rts_parser",
   private = list(
     ptr = NULL
@@ -24,7 +25,6 @@ rts_tree <- R6::R6Class("rts_tree",
   ),
   public = list(
     initialize = function(ptr) {
-      str(ptr)
       private$ptr <- ptr
     },
     print = function(...) {
