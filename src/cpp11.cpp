@@ -67,12 +67,44 @@ extern "C" SEXP _rtreesitter_node_get_type(SEXP n) {
     return cpp11::as_sexp(node_get_type(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
   END_CPP11
 }
+// node.cpp
+double node_get_start_byte(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_start_byte(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_start_byte(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
+// node.cpp
+double node_get_end_byte(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_end_byte(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_end_byte(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
+// node.cpp
+writable::doubles node_get_start_point(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_start_point(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_start_point(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
+// node.cpp
+writable::doubles node_get_end_point(rts_node n);
+extern "C" SEXP _rtreesitter_node_get_end_point(SEXP n) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_get_end_point(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
+  END_CPP11
+}
 
 extern "C" {
 /* .Call calls */
 extern SEXP _rtreesitter_node_get_child_count(SEXP);
 extern SEXP _rtreesitter_node_get_children(SEXP);
+extern SEXP _rtreesitter_node_get_end_byte(SEXP);
+extern SEXP _rtreesitter_node_get_end_point(SEXP);
 extern SEXP _rtreesitter_node_get_named_child_count(SEXP);
+extern SEXP _rtreesitter_node_get_start_byte(SEXP);
+extern SEXP _rtreesitter_node_get_start_point(SEXP);
 extern SEXP _rtreesitter_node_get_type(SEXP);
 extern SEXP _rtreesitter_node_sexp(SEXP);
 extern SEXP _rtreesitter_parser_new(SEXP);
@@ -83,7 +115,11 @@ extern SEXP _rtreesitter_tree_sexp(SEXP);
 static const R_CallMethodDef CallEntries[] = {
     {"_rtreesitter_node_get_child_count",       (DL_FUNC) &_rtreesitter_node_get_child_count,       1},
     {"_rtreesitter_node_get_children",          (DL_FUNC) &_rtreesitter_node_get_children,          1},
+    {"_rtreesitter_node_get_end_byte",          (DL_FUNC) &_rtreesitter_node_get_end_byte,          1},
+    {"_rtreesitter_node_get_end_point",         (DL_FUNC) &_rtreesitter_node_get_end_point,         1},
     {"_rtreesitter_node_get_named_child_count", (DL_FUNC) &_rtreesitter_node_get_named_child_count, 1},
+    {"_rtreesitter_node_get_start_byte",        (DL_FUNC) &_rtreesitter_node_get_start_byte,        1},
+    {"_rtreesitter_node_get_start_point",       (DL_FUNC) &_rtreesitter_node_get_start_point,       1},
     {"_rtreesitter_node_get_type",              (DL_FUNC) &_rtreesitter_node_get_type,              1},
     {"_rtreesitter_node_sexp",                  (DL_FUNC) &_rtreesitter_node_sexp,                  1},
     {"_rtreesitter_parser_new",                 (DL_FUNC) &_rtreesitter_parser_new,                 1},

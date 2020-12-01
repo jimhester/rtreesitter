@@ -46,8 +46,16 @@ rts_tree <- R6::R6Class("rts_tree",
 rts_node <- R6::R6Class("rts_node",
   active = list(
     type = function() node_get_type(private$ptr),
-    start_point = function() node_start_point(private$ptr),
-    end_point = function() node_end_point(private$ptr),
+    start_byte = function() node_get_start_byte(private$ptr),
+    end_byte = function() node_get_end_byte(private$ptr),
+    start_point = function() {
+      res <- node_get_start_point(private$ptr)
+      rts_point$new(res[[1]], res[[2]])
+    },
+    end_point = function() {
+      res <- node_get_end_point(private$ptr)
+      rts_point$new(res[[1]], res[[2]])
+    },
     children = function() {
       lapply(node_get_children(private$ptr), rts_node$new)
     }
@@ -63,6 +71,21 @@ rts_node <- R6::R6Class("rts_node",
       cat("{rts_node}\n")
       cat(node_sexp(private$ptr))
     }
+  ))
+
+rts_point <- R6::R6Class("rts_point",
+  private = list(
+    row_ = NULL,
+    column_ = NULL
+    ),
+  public = list(
+    initialize = function(row, column) {
+      private$row_ <- row
+      private$column_ <- column
+    }),
+  active = list(
+    row = function() private$row,
+    column = function() private$column
   )
 )
 

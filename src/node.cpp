@@ -41,3 +41,25 @@ list node_get_children(rts_node self) {
 std::string node_get_type(rts_node n) {
   return ts_node_type(n->node);
 }
+
+[[cpp11::register]]
+double node_get_start_byte(rts_node n) {
+  return ts_node_start_byte(n->node);
+}
+
+[[cpp11::register]]
+double node_get_end_byte(rts_node n) {
+  return ts_node_end_byte(n->node);
+}
+
+[[cpp11::register]]
+writable::doubles node_get_start_point(rts_node n) {
+  TSPoint point = ts_node_start_point(n->node);
+  return {static_cast<double>(point.row), static_cast<double>(point.column)};
+}
+
+[[cpp11::register]]
+writable::doubles node_get_end_point(rts_node n) {
+  TSPoint point = ts_node_end_point(n->node);
+  return {static_cast<double>(point.row), static_cast<double>(point.column)};
+}

@@ -1,39 +1,13 @@
 test_that("children works", {
   parser <- rts_parser$new("tree_sitter_python")
-  tree <- parser$parse("def foo(): \n  bar()")
+  tree <- parser$parse("def foo():\n  bar()")
   root_node <- tree$root_node
   expect_equal(root_node$type, "module")
+  expect_equal(root_node$start_byte, 0)
+  expect_equal(root_node$end_byte, 18)
+  expect_equal(root_node$start_point, rts_point$new(0, 0))
+  expect_equal(root_node$end_point, rts_point$new(1, 7))
 })
-
-# python tests from https://github.com/tree-sitter/py-tree-sitter/blob/master/tests/test_tree_sitter.py
-#class TestNode(TestCase):
-    #def test_child_by_field_id(self):
-        #parser = Parser()
-        #parser.set_language(PYTHON)
-        #tree = parser.parse(b"def foo():\n  bar()")
-        #root_node = tree.root_node
-        #fn_node = tree.root_node.children[0]
-
-        #self.assertEqual(PYTHON.field_id_for_name("nameasdf"), None)
-        #name_field = PYTHON.field_id_for_name("name")
-        #alias_field = PYTHON.field_id_for_name("alias")
-        #self.assertIsInstance(alias_field, int)
-        #self.assertIsInstance(name_field, int)
-        #self.assertEqual(root_node.child_by_field_id(alias_field), None)
-        #self.assertEqual(root_node.child_by_field_id(name_field), None)
-        #self.assertEqual(fn_node.child_by_field_id(alias_field), None)
-        #self.assertEqual(fn_node.child_by_field_id(name_field).type, "identifier")
-        #self.assertRaises(TypeError, root_node.child_by_field_id, "")
-        #self.assertRaises(TypeError, root_node.child_by_field_name, True)
-        #self.assertRaises(TypeError, root_node.child_by_field_name, 1)
-
-        #self.assertEqual(fn_node.child_by_field_name("name").type, "identifier")
-        #self.assertEqual(fn_node.child_by_field_name("asdfasdfname"), None)
-
-        #self.assertEqual(
-            #fn_node.child_by_field_name("name"),
-            #fn_node.child_by_field_name("name"),
-        #)
 
     #def test_children(self):
         #parser = Parser()
@@ -77,6 +51,37 @@ test_that("children works", {
         #statement_node = fn_node.children[4]
         #self.assertEqual(statement_node.type, "block")
         #self.assertEqual(statement_node.is_named, True)
+
+
+# python tests from https://github.com/tree-sitter/py-tree-sitter/blob/master/tests/test_tree_sitter.py
+#class TestNode(TestCase):
+    #def test_child_by_field_id(self):
+        #parser = Parser()
+        #parser.set_language(PYTHON)
+        #tree = parser.parse(b"def foo():\n  bar()")
+        #root_node = tree.root_node
+        #fn_node = tree.root_node.children[0]
+
+        #self.assertEqual(PYTHON.field_id_for_name("nameasdf"), None)
+        #name_field = PYTHON.field_id_for_name("name")
+        #alias_field = PYTHON.field_id_for_name("alias")
+        #self.assertIsInstance(alias_field, int)
+        #self.assertIsInstance(name_field, int)
+        #self.assertEqual(root_node.child_by_field_id(alias_field), None)
+        #self.assertEqual(root_node.child_by_field_id(name_field), None)
+        #self.assertEqual(fn_node.child_by_field_id(alias_field), None)
+        #self.assertEqual(fn_node.child_by_field_id(name_field).type, "identifier")
+        #self.assertRaises(TypeError, root_node.child_by_field_id, "")
+        #self.assertRaises(TypeError, root_node.child_by_field_name, True)
+        #self.assertRaises(TypeError, root_node.child_by_field_name, 1)
+
+        #self.assertEqual(fn_node.child_by_field_name("name").type, "identifier")
+        #self.assertEqual(fn_node.child_by_field_name("asdfasdfname"), None)
+
+        #self.assertEqual(
+            #fn_node.child_by_field_name("name"),
+            #fn_node.child_by_field_name("name"),
+        #)
 
     #def test_named_and_sibling_and_count_and_parent(self):
         #parser = Parser()

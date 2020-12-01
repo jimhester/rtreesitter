@@ -35,3 +35,19 @@ node_get_children <- function(self) {
 node_get_type <- function(n) {
   .Call("_rtreesitter_node_get_type", n, PACKAGE = "rtreesitter")
 }
+
+node_get_start_byte <- function(n) {
+  .Call("_rtreesitter_node_get_start_byte", n, PACKAGE = "rtreesitter")
+}
+
+node_get_end_byte <- function(n) {
+  .Call("_rtreesitter_node_get_end_byte", n, PACKAGE = "rtreesitter")
+}
+
+node_get_start_point <- function(n) {
+  .Call("_rtreesitter_node_get_start_point", n, PACKAGE = "rtreesitter")
+}
+
+node_get_end_point <- function(n) {
+  .Call("_rtreesitter_node_get_end_point", n, PACKAGE = "rtreesitter")
+}
