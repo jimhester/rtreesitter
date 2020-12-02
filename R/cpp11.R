@@ -8,6 +8,10 @@ parser_parse <- function(p, code) {
   .Call("_rtreesitter_parser_parse", p, code, PACKAGE = "rtreesitter")
 }
 
+parser_field_id_for_name <- function(p, name) {
+  .Call("_rtreesitter_parser_field_id_for_name", p, name, PACKAGE = "rtreesitter")
+}
+
 tree_sexp <- function(t) {
   .Call("_rtreesitter_tree_sexp", t, PACKAGE = "rtreesitter")
 }
@@ -54,4 +58,12 @@ node_get_end_point <- function(n) {
 
 node_get_is_named <- function(n) {
   .Call("_rtreesitter_node_get_is_named", n, PACKAGE = "rtreesitter")
+}
+
+node_child_by_field_name <- function(n, name) {
+  .Call("_rtreesitter_node_child_by_field_name", n, name, PACKAGE = "rtreesitter")
+}
+
+node_child_by_field_id <- function(n, id) {
+  .Call("_rtreesitter_node_child_by_field_id", n, id, PACKAGE = "rtreesitter")
 }

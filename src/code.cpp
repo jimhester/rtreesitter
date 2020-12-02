@@ -19,6 +19,11 @@ rts_tree parser_parse(rts_parser p, std::string code) {
 }
 
 [[cpp11::register]]
+double parser_field_id_for_name(rts_parser p, std::string name) {
+  return ts_language_field_id_for_name(ts_parser_language(p.get()), name.c_str(), name.length());
+}
+
+[[cpp11::register]]
 std::string tree_sexp(rts_tree t) {
   char *buf = ts_node_string(ts_tree_root_node(t.get()));
   std::string out(buf);

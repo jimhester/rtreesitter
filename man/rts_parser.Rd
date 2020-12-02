@@ -14,6 +14,7 @@ A parser object
 \item \href{#method-new}{\code{rts_parser$new()}}
 \item \href{#method-print}{\code{rts_parser$print()}}
 \item \href{#method-parse}{\code{rts_parser$parse()}}
+\item \href{#method-field_id_for_name}{\code{rts_parser$field_id_for_name()}}
 \item \href{#method-clone}{\code{rts_parser$clone()}}
 }
 }
@@ -67,6 +68,27 @@ A new \code{rts_parser} object
 \item{\code{text}}{The text to parse.}
 }
 \if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-field_id_for_name"></a>}}
+\if{latex}{\out{\hypertarget{method-field_id_for_name}{}}}
+\subsection{Method \code{field_id_for_name()}}{
+Get the numerical id for the given field name string.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rts_parser$field_id_for_name(name)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{The name to lookup}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An integer double of the ID, or \code{NULL} if no field by that name
+exists. The ID can be passed to \code{rts_node$child_by_field_id()}.
 }
 }
 \if{html}{\out{<hr>}}

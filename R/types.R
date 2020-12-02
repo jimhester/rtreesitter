@@ -20,6 +20,14 @@ rts_parser <- R6::R6Class("rts_parser",
     #' @param text The text to parse.
     parse = function(text) {
       rts_tree$new(parser_parse(private$ptr, text))
+    },
+    #' @description
+    #' Get the numerical id for the given field name string.
+    #' @param name The name to lookup
+    #' @return An integer double of the ID, or `NULL` if no field by that name
+    #'   exists. The ID can be passed to `rts_node$child_by_field_id()`.
+    field_id_for_name = function(name) {
+      parser_field_id_for_name(private$ptr, name)
     }
   )
 )
@@ -67,6 +75,20 @@ rts_node <- R6::R6Class("rts_node",
   public = list(
     initialize = function(ptr) {
       private$ptr <- ptr
+    },
+    child_by_field_name = function(name) {
+      res <- node_child_by_field_name(private$ptr, name)
+      if (is.null(res)) {
+        return(res)
+      }
+      rts_node$new(res)
+    },
+    child_by_field_id = function(id) {
+      res <- node_child_by_field_id(private$ptr, id)
+      if (is.null(res)) {
+        return(res)
+      }
+      rts_node$new(res)
     },
     print = function(...) {
       cat("{rts_node}\n")

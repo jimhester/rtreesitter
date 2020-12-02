@@ -67,3 +67,21 @@ cpp11::writable::doubles node_get_end_point(rts_node n) {
 bool node_get_is_named(rts_node n) {
   return ts_node_is_named(n->node);
 }
+
+[[cpp11::register]]
+SEXP node_child_by_field_name(rts_node n, std::string name) {
+  TSNode child = ts_node_child_by_field_name(n->node, name.c_str(), name.length());
+  if (ts_node_is_null(child)) {
+    return R_NilValue;
+  }
+  return rts_node(new ast_node(child, n->tree));
+}
+
+[[cpp11::register]]
+SEXP node_child_by_field_id(rts_node n, double id) {
+  TSNode child = ts_node_child_by_field_id(n->node, id);
+  if (ts_node_is_null(child)) {
+    return R_NilValue;
+  }
+  return rts_node(new ast_node(child, n->tree));
+}

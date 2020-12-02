@@ -19,6 +19,13 @@ extern "C" SEXP _rtreesitter_parser_parse(SEXP p, SEXP code) {
   END_CPP11
 }
 // code.cpp
+double parser_field_id_for_name(rts_parser p, std::string name);
+extern "C" SEXP _rtreesitter_parser_field_id_for_name(SEXP p, SEXP name) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(parser_field_id_for_name(cpp11::as_cpp<cpp11::decay_t<rts_parser>>(p), cpp11::as_cpp<cpp11::decay_t<std::string>>(name)));
+  END_CPP11
+}
+// code.cpp
 std::string tree_sexp(rts_tree t);
 extern "C" SEXP _rtreesitter_tree_sexp(SEXP t) {
   BEGIN_CPP11
@@ -102,9 +109,25 @@ extern "C" SEXP _rtreesitter_node_get_is_named(SEXP n) {
     return cpp11::as_sexp(node_get_is_named(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n)));
   END_CPP11
 }
+// node.cpp
+SEXP node_child_by_field_name(rts_node n, std::string name);
+extern "C" SEXP _rtreesitter_node_child_by_field_name(SEXP n, SEXP name) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_child_by_field_name(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n), cpp11::as_cpp<cpp11::decay_t<std::string>>(name)));
+  END_CPP11
+}
+// node.cpp
+SEXP node_child_by_field_id(rts_node n, double id);
+extern "C" SEXP _rtreesitter_node_child_by_field_id(SEXP n, SEXP id) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(node_child_by_field_id(cpp11::as_cpp<cpp11::decay_t<rts_node>>(n), cpp11::as_cpp<cpp11::decay_t<double>>(id)));
+  END_CPP11
+}
 
 extern "C" {
 /* .Call calls */
+extern SEXP _rtreesitter_node_child_by_field_id(SEXP, SEXP);
+extern SEXP _rtreesitter_node_child_by_field_name(SEXP, SEXP);
 extern SEXP _rtreesitter_node_get_child_count(SEXP);
 extern SEXP _rtreesitter_node_get_children(SEXP);
 extern SEXP _rtreesitter_node_get_end_byte(SEXP);
@@ -115,12 +138,15 @@ extern SEXP _rtreesitter_node_get_start_byte(SEXP);
 extern SEXP _rtreesitter_node_get_start_point(SEXP);
 extern SEXP _rtreesitter_node_get_type(SEXP);
 extern SEXP _rtreesitter_node_sexp(SEXP);
+extern SEXP _rtreesitter_parser_field_id_for_name(SEXP, SEXP);
 extern SEXP _rtreesitter_parser_new(SEXP);
 extern SEXP _rtreesitter_parser_parse(SEXP, SEXP);
 extern SEXP _rtreesitter_tree_root(SEXP);
 extern SEXP _rtreesitter_tree_sexp(SEXP);
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_rtreesitter_node_child_by_field_id",     (DL_FUNC) &_rtreesitter_node_child_by_field_id,     2},
+    {"_rtreesitter_node_child_by_field_name",   (DL_FUNC) &_rtreesitter_node_child_by_field_name,   2},
     {"_rtreesitter_node_get_child_count",       (DL_FUNC) &_rtreesitter_node_get_child_count,       1},
     {"_rtreesitter_node_get_children",          (DL_FUNC) &_rtreesitter_node_get_children,          1},
     {"_rtreesitter_node_get_end_byte",          (DL_FUNC) &_rtreesitter_node_get_end_byte,          1},
@@ -131,6 +157,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rtreesitter_node_get_start_point",       (DL_FUNC) &_rtreesitter_node_get_start_point,       1},
     {"_rtreesitter_node_get_type",              (DL_FUNC) &_rtreesitter_node_get_type,              1},
     {"_rtreesitter_node_sexp",                  (DL_FUNC) &_rtreesitter_node_sexp,                  1},
+    {"_rtreesitter_parser_field_id_for_name",   (DL_FUNC) &_rtreesitter_parser_field_id_for_name,   2},
     {"_rtreesitter_parser_new",                 (DL_FUNC) &_rtreesitter_parser_new,                 1},
     {"_rtreesitter_parser_parse",               (DL_FUNC) &_rtreesitter_parser_parse,               2},
     {"_rtreesitter_tree_root",                  (DL_FUNC) &_rtreesitter_tree_root,                  1},

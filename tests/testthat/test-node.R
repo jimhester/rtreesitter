@@ -37,6 +37,43 @@ test_that("children works", {
   expect_equal(statement_node$is_named, TRUE)
 })
 
+test_that("node$by_field_id works", {
+  parser <- rts_parser$new("tree_sitter_python")
+  tree <- parser$parse("def foo():\n  bar()")
+  root_node <- tree$root_node
+  fn_node <- root_node$children[[1]]
+
+  name_field <- parser$field_id_for_name("name")
+  alias_field <- parser$field_id_for_name("alias")
+
+  expect_type(name_field, "double")
+  expect_type(alias_field, "double")
+
+  expect_null(root_node$child_by_field_id(name_field))
+  expect_null(root_node$child_by_field_id(alias_field))
+
+  expect_equal(fn_node$child_by_field_id(name_field)$type, "identifier")
+  expect_null(fn_node$child_by_field_id(alias_field))
+})
+
+test_that("node$by_field_name works", {
+  parser <- rts_parser$new("tree_sitter_python")
+  tree <- parser$parse("def foo():\n  bar()")
+  root_node <- tree$root_node
+  fn_node <- root_node$children[[1]]
+  nme <- fn_node$child_by_field_name("name")
+  expect_equal(nme$type, "identifier")
+  expect_true(is.null(fn_node$child_by_field_name("arstarst")))
+})
+
+test_that("node$children works", {
+  parser <- rts_parser$new("tree_sitter_python")
+  code <- "def foo():\n  bar()\n\ndef foo():\n  bar()"
+  tree <- parser$parse(code)
+  for (item in tree$root_node$children) {
+    expect_true(item$is_named)
+  }
+})
 # python tests from https://github.com/tree-sitter/py-tree-sitter/blob/master/tests/test_tree_sitter.py
 #class TestNode(TestCase):
     #def test_child_by_field_id(self):
