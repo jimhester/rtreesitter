@@ -72,3 +72,27 @@ std::string tree_sexp(rts_tree t) {
 rts_node tree_root(rts_tree t) {
   return new ast_node(ts_tree_root_node(t.get()), t);
 }
+
+[[cpp11::register]]
+rts_query query_new(rts_parser p, std::string source) {
+  return new ts_query(ts_parser_language(p.get()), source);
+}
+
+[[cpp11::register]]
+cpp11::list query_captures(rts_query query, rts_node node) {
+  cpp11::writable::list out;
+  cpp11::writable::strings nms;
+  TSQueryCursor* query_cursor = ts_query_cursor_new();
+  ts_query_cursor_exec(query_cursor, query->query, node->node);
+
+  uint32_t capture_index;
+  TSQueryMatch match;
+  while(ts_query_cursor_next_capture(query_cursor, &match, &capture_index)) {
+    const TSQueryCapture* capture = &match.captures[capture_index];
+    out.push_back(rts_node(new ast_node(capture->node, node->tree)));
+    nms.push_back(query->capture_names[R_xlen_t(capture->index)]);
+  }
+  ts_query_cursor_delete(query_cursor);
+  out.names() = nms;
+  return out;
+}

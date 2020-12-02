@@ -20,6 +20,14 @@ tree_root <- function(t) {
   .Call("_rtreesitter_tree_root", t, PACKAGE = "rtreesitter")
 }
 
+query_new <- function(p, source) {
+  .Call("_rtreesitter_query_new", p, source, PACKAGE = "rtreesitter")
+}
+
+query_captures <- function(query, node) {
+  .Call("_rtreesitter_query_captures", query, node, PACKAGE = "rtreesitter")
+}
+
 node_sexp <- function(n) {
   .Call("_rtreesitter_node_sexp", n, PACKAGE = "rtreesitter")
 }

@@ -28,6 +28,9 @@ rts_parser <- R6::R6Class("rts_parser",
     #'   exists. The ID can be passed to `rts_node$child_by_field_id()`.
     field_id_for_name = function(name) {
       parser_field_id_for_name(private$ptr, name)
+    },
+    query = function(source) {
+      rts_query$new(query_new(private$ptr, source))
     }
   )
 )
@@ -112,10 +115,18 @@ rts_point <- R6::R6Class("rts_point",
   )
 )
 
-pp <- function(x) {
-  words <- strsplit(x, ' ')[[1]]
-  open <- startsWith(words, "(")
-  closed <- endsWith(words, ")")
-  words[open & !closed] <- paste0(words[open & !closed], "\n")
-  paste(words, collapse = " ")
-}
+rts_query <- R6::R6Class("rts_query",
+  private = list(
+    ptr = NULL
+  ),
+  public = list(
+    initialize = function(ptr) {
+      private$ptr <- ptr
+    },
+    print = function(...) {
+      cat("{rts_query}\n")
+    },
+    captures = function(node) {
+      lapply(query_captures(private$ptr, node$.__enclos_env__$private$ptr), rts_node$new)
+    }
+))

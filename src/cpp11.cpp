@@ -39,6 +39,20 @@ extern "C" SEXP _rtreesitter_tree_root(SEXP t) {
     return cpp11::as_sexp(tree_root(cpp11::as_cpp<cpp11::decay_t<rts_tree>>(t)));
   END_CPP11
 }
+// code.cpp
+rts_query query_new(rts_parser p, std::string source);
+extern "C" SEXP _rtreesitter_query_new(SEXP p, SEXP source) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(query_new(cpp11::as_cpp<cpp11::decay_t<rts_parser>>(p), cpp11::as_cpp<cpp11::decay_t<std::string>>(source)));
+  END_CPP11
+}
+// code.cpp
+cpp11::list query_captures(rts_query query, rts_node node);
+extern "C" SEXP _rtreesitter_query_captures(SEXP query, SEXP node) {
+  BEGIN_CPP11
+    return cpp11::as_sexp(query_captures(cpp11::as_cpp<cpp11::decay_t<rts_query>>(query), cpp11::as_cpp<cpp11::decay_t<rts_node>>(node)));
+  END_CPP11
+}
 // node.cpp
 std::string node_sexp(rts_node n);
 extern "C" SEXP _rtreesitter_node_sexp(SEXP n) {
@@ -141,6 +155,8 @@ extern SEXP _rtreesitter_node_sexp(SEXP);
 extern SEXP _rtreesitter_parser_field_id_for_name(SEXP, SEXP);
 extern SEXP _rtreesitter_parser_new(SEXP);
 extern SEXP _rtreesitter_parser_parse(SEXP, SEXP);
+extern SEXP _rtreesitter_query_captures(SEXP, SEXP);
+extern SEXP _rtreesitter_query_new(SEXP, SEXP);
 extern SEXP _rtreesitter_tree_root(SEXP);
 extern SEXP _rtreesitter_tree_sexp(SEXP);
 
@@ -160,6 +176,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rtreesitter_parser_field_id_for_name",   (DL_FUNC) &_rtreesitter_parser_field_id_for_name,   2},
     {"_rtreesitter_parser_new",                 (DL_FUNC) &_rtreesitter_parser_new,                 1},
     {"_rtreesitter_parser_parse",               (DL_FUNC) &_rtreesitter_parser_parse,               2},
+    {"_rtreesitter_query_captures",             (DL_FUNC) &_rtreesitter_query_captures,             2},
+    {"_rtreesitter_query_new",                  (DL_FUNC) &_rtreesitter_query_new,                  2},
     {"_rtreesitter_tree_root",                  (DL_FUNC) &_rtreesitter_tree_root,                  1},
     {"_rtreesitter_tree_sexp",                  (DL_FUNC) &_rtreesitter_tree_sexp,                  1},
     {NULL, NULL, 0}
