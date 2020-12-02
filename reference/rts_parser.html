@@ -130,6 +130,7 @@ A parser object" />
 <li><p><a href='#method-new'><code>rts_parser$new()</code></a></p></li>
 <li><p><a href='#method-print'><code>rts_parser$print()</code></a></p></li>
 <li><p><a href='#method-parse'><code>rts_parser$parse()</code></a></p></li>
+<li><p><a href='#method-field_id_for_name'><code>rts_parser$field_id_for_name()</code></a></p></li>
 <li><p><a href='#method-clone'><code>rts_parser$clone()</code></a></p></li>
 </ul>
 <p><hr>
@@ -166,6 +167,19 @@ A parser object" />
 <dt><code>text</code></dt><dd><p>The text to parse.</p></dd>
 
 </dl><p></div></p>
+<p><hr>
+<a id="method-field_id_for_name"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>field_id_for_name()</code></h3>
+<p>Get the numerical id for the given field name string.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
+<p><div class="r"></p><pre><span class='va'>rts_parser</span><span class='op'>$</span><span class='fu'>field_id_for_name</span><span class='op'>(</span><span class='va'>name</span><span class='op'>)</span></pre><p></div></p>
+
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Arguments</h4>
+<p><div class="arguments"></p><dl>
+<dt><code>name</code></dt><dd><p>The name to lookup</p></dd>
+
+</dl><p></div></p>
+<h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Returns</h4>
+<p>An integer double of the ID, or <code>NULL</code> if no field by that name
+exists. The ID can be passed to <code>rts_node$child_by_field_id()</code>.</p>
 <p><hr>
 <a id="method-clone"></a></p><h3 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Method <code>clone()</code></h3>
 <p>The objects of this class are cloneable with this method.</p><h4 class='hasAnchor' id='arguments'><a class='anchor' href='#arguments'></a>Usage</h4>
