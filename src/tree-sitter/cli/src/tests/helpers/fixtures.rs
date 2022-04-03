@@ -1,14 +1,15 @@
-use crate::loader::Loader;
 use lazy_static::lazy_static;
 use std::fs;
 use std::path::{Path, PathBuf};
 use tree_sitter::Language;
 use tree_sitter_highlight::HighlightConfiguration;
+use tree_sitter_loader::Loader;
+use tree_sitter_tags::TagsConfiguration;
 
 include!("./dirs.rs");
 
 lazy_static! {
-    static ref TEST_LOADER: Loader = Loader::new(SCRATCH_DIR.clone());
+    static ref TEST_LOADER: Loader = Loader::with_parser_lib_path(SCRATCH_DIR.clone());
 }
 
 pub fn test_loader<'a>() -> &'a Loader {
@@ -50,8 +51,16 @@ pub fn get_highlight_config(
         &locals_query,
     )
     .unwrap();
-    result.configure(highlight_names);
+    result.configure(&highlight_names);
     result
+}
+
+pub fn get_tags_config(language_name: &str) -> TagsConfiguration {
+    let language = get_language(language_name);
+    let queries_path = get_language_queries_path(language_name);
+    let tags_query = fs::read_to_string(queries_path.join("tags.scm")).unwrap();
+    let locals_query = fs::read_to_string(queries_path.join("locals.scm")).unwrap_or(String::new());
+    TagsConfiguration::new(language, &tags_query, &locals_query).unwrap()
 }
 
 pub fn get_test_language(name: &str, parser_code: &str, path: Option<&Path>) -> Language {
@@ -73,4 +82,10 @@ pub fn get_test_language(name: &str, parser_code: &str, path: Option<&Path>) -> 
     TEST_LOADER
         .load_language_from_sources(name, &HEADER_DIR, &parser_c_path, &scanner_path)
         .unwrap()
+}
+
+pub fn get_test_grammar(name: &str) -> (String, Option<PathBuf>) {
+    let dir = fixtures_dir().join("test_grammars").join(name);
+    let grammar = fs::read_to_string(&dir.join("grammar.json")).unwrap();
+    (grammar, Some(dir))
 }

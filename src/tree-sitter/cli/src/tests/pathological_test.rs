@@ -1,5 +1,4 @@
-use super::helpers::allocations;
-use super::helpers::fixtures::get_language;
+use super::helpers::{allocations, fixtures::get_language};
 use tree_sitter::Parser;
 
 #[test]

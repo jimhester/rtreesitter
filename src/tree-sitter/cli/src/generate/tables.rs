@@ -1,11 +1,16 @@
 use super::nfa::CharacterSet;
-use super::rules::{Alias, Associativity, Symbol, TokenSet};
-use std::collections::{BTreeMap, HashMap};
+use super::rules::{Alias, Symbol, TokenSet};
+use std::collections::BTreeMap;
 pub(crate) type ProductionInfoId = usize;
 pub(crate) type ParseStateId = usize;
 pub(crate) type LexStateId = usize;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+use std::hash::BuildHasherDefault;
+
+use indexmap::IndexMap;
+use rustc_hash::FxHasher;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum ParseAction {
     Accept,
     Shift {
@@ -17,9 +22,7 @@ pub(crate) enum ParseAction {
     Reduce {
         symbol: Symbol,
         child_count: usize,
-        precedence: i32,
         dynamic_precedence: i32,
-        associativity: Option<Associativity>,
         production_id: ProductionInfoId,
     },
 }
@@ -30,7 +33,7 @@ pub(crate) enum GotoAction {
     ShiftExtra,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub(crate) struct ParseTableEntry {
     pub actions: Vec<ParseAction>,
     pub reusable: bool,
@@ -39,12 +42,11 @@ pub(crate) struct ParseTableEntry {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(crate) struct ParseState {
     pub id: ParseStateId,
-    pub terminal_entries: HashMap<Symbol, ParseTableEntry>,
-    pub nonterminal_entries: HashMap<Symbol, GotoAction>,
+    pub terminal_entries: IndexMap<Symbol, ParseTableEntry, BuildHasherDefault<FxHasher>>,
+    pub nonterminal_entries: IndexMap<Symbol, GotoAction, BuildHasherDefault<FxHasher>>,
     pub lex_state_id: usize,
     pub external_lex_state_id: usize,
     pub core_id: usize,
-    pub is_non_terminal_extra: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -102,6 +104,11 @@ impl Default for LexTable {
 }
 
 impl ParseState {
+    pub fn is_end_of_non_terminal_extra(&self) -> bool {
+        self.terminal_entries
+            .contains_key(&Symbol::end_of_nonterminal_extra())
+    }
+
     pub fn referenced_states<'a>(&'a self) -> impl Iterator<Item = ParseStateId> + 'a {
         self.terminal_entries
             .iter()
@@ -156,16 +163,6 @@ impl ParseState {
                     };
                 }
             }
-        }
-    }
-}
-
-impl ParseAction {
-    pub fn precedence(&self) -> i32 {
-        if let ParseAction::Reduce { precedence, .. } = self {
-            *precedence
-        } else {
-            0
         }
     }
 }

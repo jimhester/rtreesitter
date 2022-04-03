@@ -1,9 +1,10 @@
+mod binding_files;
 mod build_tables;
+mod char_tree;
 mod dedup;
 mod grammars;
 mod nfa;
 mod node_types;
-mod npm_files;
 pub mod parse_grammar;
 mod prepare_grammar;
 mod render;
@@ -16,9 +17,10 @@ use self::parse_grammar::parse_grammar;
 use self::prepare_grammar::prepare_grammar;
 use self::render::render_c_code;
 use self::rules::AliasMap;
-use crate::error::{Error, Result};
+use anyhow::{anyhow, Context, Result};
 use lazy_static::lazy_static;
 use regex::{Regex, RegexBuilder};
+use semver::Version;
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -31,10 +33,6 @@ lazy_static! {
         .unwrap();
 }
 
-const NEW_HEADER_PARTS: &[&'static str] = &["
-  const uint16_t *alias_map;
-  uint32_t state_count;"];
-
 struct GeneratedParser {
     c_code: String,
     node_types_json: String,
@@ -43,7 +41,8 @@ struct GeneratedParser {
 pub fn generate_parser_in_directory(
     repo_path: &PathBuf,
     grammar_path: Option<&str>,
-    next_abi: bool,
+    abi_version: usize,
+    generate_bindings: bool,
     report_symbol_name: Option<&str>,
 ) -> Result<()> {
     let src_path = repo_path.join("src");
@@ -82,37 +81,17 @@ pub fn generate_parser_in_directory(
         lexical_grammar,
         inlines,
         simple_aliases,
-        next_abi,
+        abi_version,
         report_symbol_name,
     )?;
 
     write_file(&src_path.join("parser.c"), c_code)?;
     write_file(&src_path.join("node-types.json"), node_types_json)?;
+    write_file(&header_path.join("parser.h"), tree_sitter::PARSER_HEADER)?;
 
-    if next_abi {
-        write_file(&header_path.join("parser.h"), tree_sitter::PARSER_HEADER)?;
-    } else {
-        let mut header = tree_sitter::PARSER_HEADER.to_string();
-
-        for part in NEW_HEADER_PARTS.iter() {
-            let pos = header
-                .find(part)
-                .expect("Missing expected part of parser.h header");
-            header.replace_range(pos..(pos + part.len()), "");
-        }
-
-        write_file(&header_path.join("parser.h"), header)?;
+    if generate_bindings {
+        binding_files::generate_binding_files(&repo_path, &language_name)?;
     }
-
-    ensure_file(&repo_path.join("index.js"), || {
-        npm_files::index_js(&language_name)
-    })?;
-    ensure_file(&src_path.join("binding.cc"), || {
-        npm_files::binding_cc(&language_name)
-    })?;
-    ensure_file(&repo_path.join("binding.gyp"), || {
-        npm_files::binding_gyp(&language_name)
-    })?;
 
     Ok(())
 }
@@ -128,7 +107,7 @@ pub fn generate_parser_for_grammar(grammar_json: &str) -> Result<(String, String
         lexical_grammar,
         inlines,
         simple_aliases,
-        true,
+        tree_sitter::LANGUAGE_VERSION,
         None,
     )?;
     Ok((input_grammar.name, parser.c_code))
@@ -140,7 +119,7 @@ fn generate_parser_for_grammar_with_opts(
     lexical_grammar: LexicalGrammar,
     inlines: InlinedProductionMap,
     simple_aliases: AliasMap,
-    next_abi: bool,
+    abi_version: usize,
     report_symbol_name: Option<&str>,
 ) -> Result<GeneratedParser> {
     let variable_info =
@@ -168,7 +147,7 @@ fn generate_parser_for_grammar_with_opts(
         syntax_grammar,
         lexical_grammar,
         simple_aliases,
-        next_abi,
+        abi_version,
     );
     Ok(GeneratedParser {
         c_code,
@@ -176,18 +155,19 @@ fn generate_parser_for_grammar_with_opts(
     })
 }
 
-fn load_grammar_file(grammar_path: &Path) -> Result<String> {
+pub fn load_grammar_file(grammar_path: &Path) -> Result<String> {
     match grammar_path.extension().and_then(|e| e.to_str()) {
         Some("js") => Ok(load_js_grammar_file(grammar_path)?),
         Some("json") => Ok(fs::read_to_string(grammar_path)?),
-        _ => Err(Error::new(format!(
+        _ => Err(anyhow!(
             "Unknown grammar file extension: {:?}",
             grammar_path
-        ))),
+        )),
     }
 }
 
 fn load_js_grammar_file(grammar_path: &Path) -> Result<String> {
+    let grammar_path = fs::canonicalize(grammar_path)?;
     let mut node_process = Command::new("node")
         .env("TREE_SITTER_GRAMMAR_PATH", grammar_path)
         .stdin(Stdio::piped())
@@ -199,10 +179,20 @@ fn load_js_grammar_file(grammar_path: &Path) -> Result<String> {
         .stdin
         .take()
         .expect("Failed to open stdin for node");
+    let cli_version = Version::parse(env!("CARGO_PKG_VERSION"))
+        .expect("Could not parse this package's version as semver.");
+    write!(
+        node_stdin,
+        "global.TREE_SITTER_CLI_VERSION_MAJOR = {};
+        global.TREE_SITTER_CLI_VERSION_MINOR = {};
+        global.TREE_SITTER_CLI_VERSION_PATCH = {};",
+        cli_version.major, cli_version.minor, cli_version.patch,
+    )
+    .expect("Failed to write tree-sitter version to node's stdin");
     let javascript_code = include_bytes!("./dsl.js");
     node_stdin
         .write(javascript_code)
-        .expect("Failed to write to node's stdin");
+        .expect("Failed to write grammar dsl to node's stdin");
     drop(node_stdin);
     let output = node_process
         .wait_with_output()
@@ -210,7 +200,7 @@ fn load_js_grammar_file(grammar_path: &Path) -> Result<String> {
     match output.status.code() {
         None => panic!("Node process was killed"),
         Some(0) => {}
-        Some(code) => return Error::err(format!("Node process exited with status {}", code)),
+        Some(code) => return Err(anyhow!("Node process exited with status {}", code)),
     }
 
     let mut result = String::from_utf8(output.stdout).expect("Got invalid UTF8 from node");
@@ -219,15 +209,6 @@ fn load_js_grammar_file(grammar_path: &Path) -> Result<String> {
 }
 
 fn write_file(path: &Path, body: impl AsRef<[u8]>) -> Result<()> {
-    fs::write(path, body).map_err(Error::wrap(|| {
-        format!("Failed to write {:?}", path.file_name().unwrap())
-    }))
-}
-
-fn ensure_file<T: AsRef<[u8]>>(path: &PathBuf, f: impl Fn() -> T) -> Result<()> {
-    if path.exists() {
-        Ok(())
-    } else {
-        write_file(path, f().as_ref())
-    }
+    fs::write(path, body)
+        .with_context(|| format!("Failed to write {:?}", path.file_name().unwrap()))
 }

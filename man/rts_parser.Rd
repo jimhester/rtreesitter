@@ -15,6 +15,7 @@ A parser object
 \item \href{#method-print}{\code{rts_parser$print()}}
 \item \href{#method-parse}{\code{rts_parser$parse()}}
 \item \href{#method-field_id_for_name}{\code{rts_parser$field_id_for_name()}}
+\item \href{#method-query}{\code{rts_parser$query()}}
 \item \href{#method-clone}{\code{rts_parser$clone()}}
 }
 }
@@ -90,6 +91,15 @@ Get the numerical id for the given field name string.
 An integer double of the ID, or \code{NULL} if no field by that name
 exists. The ID can be passed to \code{rts_node$child_by_field_id()}.
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-query"></a>}}
+\if{latex}{\out{\hypertarget{method-query}{}}}
+\subsection{Method \code{query()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{rts_parser$query(source)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}

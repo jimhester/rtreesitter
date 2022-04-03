@@ -2,6 +2,8 @@ log*.html
 
 .idea
 *.xcodeproj
+.vscode
+.cache
 
 fuzz-results
 
@@ -16,6 +18,8 @@ docs/assets/js/tree-sitter.js
 *.rs.bk
 *.a
 *.dylib
+*.so
+*.so.[0-9]*
 *.o
 *.obj
 *.exp

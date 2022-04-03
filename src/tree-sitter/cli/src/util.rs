@@ -1,10 +1,12 @@
-use super::error::{Error, Result};
+use anyhow::Result;
 use std::io;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::thread;
 use tree_sitter::Parser;
 
+#[cfg(unix)]
+use anyhow::{anyhow, Context};
 #[cfg(unix)]
 use std::path::PathBuf;
 #[cfg(unix)]
@@ -49,13 +51,11 @@ pub fn log_graphs(parser: &mut Parser, path: &str) -> Result<LogSession> {
         .stdin(Stdio::piped())
         .stdout(dot_file)
         .spawn()
-        .map_err(Error::wrap(|| {
-            "Failed to run the `dot` command. Check that graphviz is installed."
-        }))?;
+        .with_context(|| "Failed to run the `dot` command. Check that graphviz is installed.")?;
     let dot_stdin = dot_process
         .stdin
         .take()
-        .ok_or_else(|| Error::new("Failed to open stdin for `dot` process.".to_string()))?;
+        .ok_or_else(|| anyhow!("Failed to open stdin for `dot` process."))?;
     parser.print_dot_graphs(&dot_stdin);
     Ok(LogSession(
         PathBuf::from(path),

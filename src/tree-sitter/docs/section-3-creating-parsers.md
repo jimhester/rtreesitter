@@ -84,7 +84,7 @@ tree-sitter parse example-file
 This should print the following:
 
 ```
-(source_file [1, 0] - [1, 5])
+(source_file [0, 0] - [1, 0])
 ```
 
 You now have a working parser.
@@ -95,13 +95,15 @@ Let's go over all of the functionality of the `tree-sitter` command line tool.
 
 ### Command: `generate`
 
-The most important command you'll use is `tree-sitter generate`. This command reads the `grammar.js` file in your current working directory and creates a file called `src/parser.c`, which implements the parser. After making changes to your grammar, just run `tree-sitter` generate again.
+The most important command you'll use is `tree-sitter generate`. This command reads the `grammar.js` file in your current working directory and creates a file called `src/parser.c`, which implements the parser. After making changes to your grammar, just run `tree-sitter generate` again.
 
 The first time you run `tree-sitter generate`, it will also generate a few other files:
 
 * `binding.gyp` - This file tells Node.js how to compile your language.
-* `index.js` - This is the file that Node.js initially loads when using your language.
-* `src/binding.cc` - This file wraps your language in a JavaScript object when used in Node.js
+* `bindings/node/index.js` - This is the file that Node.js initially loads when using your language.
+* `bindings/node/binding.cc` - This file wraps your language in a JavaScript object when used in Node.js.
+* `bindings/rust/lib.rs` - This file wraps your language in a Rust crate when used in Rust.
+* `bindings/rust/build.rs` - This file wraps the building process for the Rust crate.
 * `src/tree_sitter/parser.h` - This file provides some basic C definitions that are used in your generated `parser.c` file.
 
 If there is an ambiguity or *local ambiguity* in your grammar, Tree-sitter will detect it during parser generation, and it will exit with a `Unresolved conflict` error message. See below for more information on these errors.
@@ -210,6 +212,7 @@ The following is a complete list of built-in functions you can use in your `gram
 * **Right Associativity : `prec.right([number], rule)`** - This function is like `prec.left`, but it instructs Tree-sitter to prefer matching a rule that ends *later*.
 * **Dynamic Precedence : `prec.dynamic(number, rule)`** - This function is similar to `prec`, but the given numerical precedence is applied at *runtime* instead of at parser generation time. This is only necessary when handling a conflict dynamically using the `conflicts` field in the grammar, and when there is a genuine *ambiguity*: multiple rules correctly match a given piece of code. In that event, Tree-sitter compares the total dynamic precedence associated with each rule, and selects the one with the highest total. This is similar to [dynamic precedence directives][bison-dprec] in Bison grammars.
 * **Tokens : `token(rule)`** - This function marks the given rule as producing only a single token. Tree-sitter's default is to treat each String or RegExp literal in the grammar as a separate token. Each token is matched separately by the lexer and returned as its own leaf node in the tree. The `token` function allows you to express a complex rule using the functions described above (rather than as a single regular expression) but still have Tree-sitter treat it as a single token.
+* **Immediate Tokens : `token.immediate(rule)`** - Usually, whitespace (and any other extras, such as comments) is optional before each token. This function means that the token will only match if there is no whitespace.
 * **Aliases : `alias(rule, name)`** - This function causes the given rule to *appear* with an alternative name in the syntax tree. If `name` is a *symbol*, as in `alias($.foo, $.bar)`, then the aliased rule will *appear* as a [named node][named-vs-anonymous-nodes-section] called `bar`. And if `name` is a *string literal*, as in `alias($.foo, 'bar')`, then the aliased rule will appear as an [anonymous node][named-vs-anonymous-nodes-section], as if the rule had been written as the simple string.
 * **Field Names : `field(name, rule)`** - This function assigns a *field name* to the child node(s) matched by the given rule. In the resulting syntax tree, you can then use that field name to access specific children.
 
@@ -237,7 +240,7 @@ It's unlikely that you'll be able to satisfy these two properties just by transl
 
 It's usually a good idea to find a formal specification for the language you're trying to parse. This specification will most likely contain a context-free grammar. As you read through the rules of this CFG, you will probably discover a complex and cyclic graph of relationships. It might be unclear how you should navigate this graph as you define your grammar.
 
-Although languages have very different constructs, their constructs can often be categorized in to similar groups like *Declarations*, *Definitions*, *Statements*, *Expressions*, *Types*, and *Patterns*. In writing your grammar, a good first step is to create just enough structure to include all of these basic *groups* of symbols. For a lanugage like Go, you might start with something like this:
+Although languages have very different constructs, their constructs can often be categorized in to similar groups like *Declarations*, *Definitions*, *Statements*, *Expressions*, *Types*, and *Patterns*. In writing your grammar, a good first step is to create just enough structure to include all of these basic *groups* of symbols. For a language like Go, you might start with something like this:
 
 ```js
 {
@@ -671,7 +674,7 @@ This function is responsible for recognizing external tokens. It should return `
 * **`TSSymbol result_symbol`** - The symbol that was recognized. Your scan function should *assign* to this field one of the values from the `TokenType` enum, described above.
 * **`void (*advance)(TSLexer *, bool skip)`** - A function for advancing to the next character. If you pass `true` for the second argument, the current character will be treated as whitespace.
 * **`void (*mark_end)(TSLexer *)`** - A function for marking the end of the recognized token. This allows matching tokens that require multiple characters of lookahead. By default (if you don't call `mark_end`), any character that you moved past using the `advance` function will be included in the size of the token. But once you call `mark_end`, then any later calls to `advance` will *not* increase the size of the returned token. You can call `mark_end` multiple times to increase the size of the token.
-* **`uint32_t (*get_column)(TSLexer *)`** - **(Experimental)** A function for querying the current column position of the lexer. It returns the number of unicode code points (not bytes) since the start of the current line.
+* **`uint32_t (*get_column)(TSLexer *)`** - A function for querying the current column position of the lexer. It returns the number of codepoints since the start of the current line. The codepoint position is recalculated on every call to this function by reading from the start of the line.
 * **`bool (*is_at_included_range_start)(TSLexer *)`** - A function for checking if the parser has just skipped some characters in the document. When parsing an embedded document using the `ts_parser_set_included_ranges` function (described in the [multi-language document section][multi-language-section]), your scanner may want to apply some special behavior when moving to a disjoint part of the document. For example, in [EJS documents][ejs], the JavaScript parser uses this function to enable inserting automatic semicolon tokens in between the code directives, delimited by `<%` and `%>`.
 
 The third argument to the `scan` function is an array of booleans that indicates which of your external tokens are currently expected by the parser. You should only look for a given token if it is valid according to this array. At the same time, you cannot backtrack, so you may need to combine certain pieces of logic.
@@ -701,7 +704,7 @@ if (valid_symbols[INDENT] || valid_symbol[DEDENT]) {
 [cst]: https://en.wikipedia.org/wiki/Parse_tree
 [dfa]: https://en.wikipedia.org/wiki/Deterministic_finite_automaton
 [ebnf]: https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
-[ecmascript-spec]: https://www.ecma-international.org/ecma-262/6.0
+[ecmascript-spec]: https://262.ecma-international.org/6.0/
 [ejs]: https://ejs.co
 [enum]: https://en.wikipedia.org/wiki/Enumerated_type#C
 [glr-parsing]: https://en.wikipedia.org/wiki/GLR_parser
@@ -723,7 +726,7 @@ if (valid_symbols[INDENT] || valid_symbol[DEDENT]) {
 [npm]: https://docs.npmjs.com
 [path-env]: https://en.wikipedia.org/wiki/PATH_(variable)
 [peg]: https://en.wikipedia.org/wiki/Parsing_expression_grammar
-[percent-string]: https://docs.ruby-lang.org/en/2.5.0/syntax/literals_rdoc.html#label-Percent+Strings
+[percent-string]: https://docs.ruby-lang.org/en/2.5.0/doc/syntax/literals_rdoc.html#label-Percent+Strings
 [releases]: https://github.com/tree-sitter/tree-sitter/releases/latest
 [s-exp]: https://en.wikipedia.org/wiki/S-expression
 [syntax-highlighting]: ./syntax-highlighting

@@ -81,6 +81,32 @@ describe("Query", () => {
         { pattern: 0, captures: [{ name: "element", text: "g" }] },
       ]);
     });
+
+    it("handles predicates that compare the text of capture to literal strings", () => {
+      tree = parser.parse(`
+        giraffe(1, 2, []);
+        helment([false]);
+        goat(false);
+        gross(3, []);
+        hiccup([]);
+        gaff(5);
+      `);
+
+      // Find all calls to functions beginning with 'g', where one argument
+      // is an array literal.
+      query = JavaScript.query(`
+        (call_expression
+          function: (identifier) @name
+          arguments: (arguments (array))
+          (#match? @name "^g"))
+      `);
+
+      const matches = query.matches(tree.rootNode);
+      assert.deepEqual(formatMatches(matches), [
+        { pattern: 0, captures: [{name: "name", text: "giraffe" }] },
+        { pattern: 0, captures: [{name: "name", text: "gross" }] },
+      ]);
+    });
   });
 
   describe(".captures", () => {
@@ -212,6 +238,26 @@ describe("Query", () => {
           refutedProperties: { bar: "baz" },
         },
       ]);
+      assert.ok(!query.didExceedMatchLimit());
+    });
+
+    it("detects queries with too many permutations to track", () => {
+      tree = parser.parse(`
+        [
+          hello, hello, hello, hello, hello, hello, hello, hello, hello, hello,
+          hello, hello, hello, hello, hello, hello, hello, hello, hello, hello,
+          hello, hello, hello, hello, hello, hello, hello, hello, hello, hello,
+          hello, hello, hello, hello, hello, hello, hello, hello, hello, hello,
+          hello, hello, hello, hello, hello, hello, hello, hello, hello, hello,
+        ];
+      `);
+
+      query = JavaScript.query(`
+        (array (identifier) @pre (identifier) @post)
+      `);
+
+      const captures = query.captures(tree.rootNode, null, null, {matchLimit: 32});
+      assert.ok(query.didExceedMatchLimit());
     });
   });
 

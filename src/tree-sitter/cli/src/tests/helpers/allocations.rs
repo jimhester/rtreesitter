@@ -1,10 +1,21 @@
-#![cfg(test)]
-#![allow(dead_code)]
+use std::{
+    collections::HashMap,
+    os::raw::c_void,
+    sync::{
+        atomic::{AtomicBool, AtomicU64, Ordering::SeqCst},
+        Mutex,
+    },
+};
 
-use lazy_static::lazy_static;
-use spin::Mutex;
-use std::collections::HashMap;
-use std::os::raw::{c_ulong, c_void};
+#[ctor::ctor]
+unsafe fn initialize_allocation_recording() {
+    tree_sitter::set_allocator(
+        Some(ts_record_malloc),
+        Some(ts_record_calloc),
+        Some(ts_record_realloc),
+        Some(ts_record_free),
+    );
+}
 
 #[derive(Debug, PartialEq, Eq, Hash)]
 struct Allocation(*const c_void);
@@ -13,100 +24,96 @@ unsafe impl Sync for Allocation {}
 
 #[derive(Default)]
 struct AllocationRecorder {
-    enabled: bool,
-    allocation_count: u64,
-    outstanding_allocations: HashMap<Allocation, u64>,
+    enabled: AtomicBool,
+    allocation_count: AtomicU64,
+    outstanding_allocations: Mutex<HashMap<Allocation, u64>>,
 }
 
-lazy_static! {
-    static ref RECORDER: Mutex<AllocationRecorder> = Mutex::new(AllocationRecorder::default());
+thread_local! {
+    static RECORDER: AllocationRecorder = Default::default();
 }
 
 extern "C" {
-    fn malloc(size: c_ulong) -> *mut c_void;
-    fn calloc(count: c_ulong, size: c_ulong) -> *mut c_void;
-    fn realloc(ptr: *mut c_void, size: c_ulong) -> *mut c_void;
+    fn malloc(size: usize) -> *mut c_void;
+    fn calloc(count: usize, size: usize) -> *mut c_void;
+    fn realloc(ptr: *mut c_void, size: usize) -> *mut c_void;
     fn free(ptr: *mut c_void);
 }
 
-pub fn start_recording() {
-    let mut recorder = RECORDER.lock();
-    recorder.enabled = true;
-    recorder.allocation_count = 0;
-    recorder.outstanding_allocations.clear();
-}
+pub fn record<T>(f: impl FnOnce() -> T) -> T {
+    RECORDER.with(|recorder| {
+        recorder.enabled.store(true, SeqCst);
+        recorder.allocation_count.store(0, SeqCst);
+        recorder.outstanding_allocations.lock().unwrap().clear();
+    });
 
-pub fn stop_recording() {
-    let mut recorder = RECORDER.lock();
-    recorder.enabled = false;
+    let value = f();
 
-    if !recorder.outstanding_allocations.is_empty() {
-        let mut allocation_indices = recorder
+    let outstanding_allocation_indices = RECORDER.with(|recorder| {
+        recorder.enabled.store(false, SeqCst);
+        recorder.allocation_count.store(0, SeqCst);
+        recorder
             .outstanding_allocations
-            .iter()
+            .lock()
+            .unwrap()
+            .drain()
             .map(|e| e.1)
-            .collect::<Vec<_>>();
-        allocation_indices.sort_unstable();
-        panic!("Leaked allocation indices: {:?}", allocation_indices);
+            .collect::<Vec<_>>()
+    });
+    if !outstanding_allocation_indices.is_empty() {
+        panic!(
+            "Leaked allocation indices: {:?}",
+            outstanding_allocation_indices
+        );
     }
-}
-
-pub fn record(f: impl FnOnce()) {
-    start_recording();
-    f();
-    stop_recording();
+    value
 }
 
 fn record_alloc(ptr: *mut c_void) {
-    let mut recorder = RECORDER.lock();
-    if recorder.enabled {
-        let count = recorder.allocation_count;
-        recorder.allocation_count += 1;
-        recorder
-            .outstanding_allocations
-            .insert(Allocation(ptr), count);
-    }
+    RECORDER.with(|recorder| {
+        if recorder.enabled.load(SeqCst) {
+            let count = recorder.allocation_count.fetch_add(1, SeqCst);
+            recorder
+                .outstanding_allocations
+                .lock()
+                .unwrap()
+                .insert(Allocation(ptr), count);
+        }
+    });
 }
 
 fn record_dealloc(ptr: *mut c_void) {
-    let mut recorder = RECORDER.lock();
-    if recorder.enabled {
-        recorder.outstanding_allocations.remove(&Allocation(ptr));
-    }
+    RECORDER.with(|recorder| {
+        if recorder.enabled.load(SeqCst) {
+            recorder
+                .outstanding_allocations
+                .lock()
+                .unwrap()
+                .remove(&Allocation(ptr));
+        }
+    });
 }
 
-#[no_mangle]
-extern "C" fn ts_record_malloc(size: c_ulong) -> *const c_void {
-    let result = unsafe { malloc(size) };
+unsafe extern "C" fn ts_record_malloc(size: usize) -> *mut c_void {
+    let result = malloc(size);
     record_alloc(result);
     result
 }
 
-#[no_mangle]
-extern "C" fn ts_record_calloc(count: c_ulong, size: c_ulong) -> *const c_void {
-    let result = unsafe { calloc(count, size) };
+unsafe extern "C" fn ts_record_calloc(count: usize, size: usize) -> *mut c_void {
+    let result = calloc(count, size);
     record_alloc(result);
     result
 }
 
-#[no_mangle]
-extern "C" fn ts_record_realloc(ptr: *mut c_void, size: c_ulong) -> *const c_void {
+unsafe extern "C" fn ts_record_realloc(ptr: *mut c_void, size: usize) -> *mut c_void {
     record_dealloc(ptr);
-    let result = unsafe { realloc(ptr, size) };
+    let result = realloc(ptr, size);
     record_alloc(result);
     result
 }
 
-#[no_mangle]
-extern "C" fn ts_record_free(ptr: *mut c_void) {
+unsafe extern "C" fn ts_record_free(ptr: *mut c_void) {
     record_dealloc(ptr);
-    unsafe { free(ptr) };
-}
-
-#[no_mangle]
-extern "C" fn ts_toggle_allocation_recording(enabled: bool) -> bool {
-    let mut recorder = RECORDER.lock();
-    let was_enabled = recorder.enabled;
-    recorder.enabled = enabled;
-    was_enabled
+    free(ptr);
 }

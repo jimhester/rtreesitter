@@ -3,6 +3,7 @@
 
 #include "rtreesitter_types.h"
 #include "cpp11/declarations.hpp"
+#include <R_ext/Visibility.h>
 
 // code.cpp
 rts_parser parser_new(std::string language);
@@ -139,27 +140,6 @@ extern "C" SEXP _rtreesitter_node_child_by_field_id(SEXP n, SEXP id) {
 }
 
 extern "C" {
-/* .Call calls */
-extern SEXP _rtreesitter_node_child_by_field_id(SEXP, SEXP);
-extern SEXP _rtreesitter_node_child_by_field_name(SEXP, SEXP);
-extern SEXP _rtreesitter_node_get_child_count(SEXP);
-extern SEXP _rtreesitter_node_get_children(SEXP);
-extern SEXP _rtreesitter_node_get_end_byte(SEXP);
-extern SEXP _rtreesitter_node_get_end_point(SEXP);
-extern SEXP _rtreesitter_node_get_is_named(SEXP);
-extern SEXP _rtreesitter_node_get_named_child_count(SEXP);
-extern SEXP _rtreesitter_node_get_start_byte(SEXP);
-extern SEXP _rtreesitter_node_get_start_point(SEXP);
-extern SEXP _rtreesitter_node_get_type(SEXP);
-extern SEXP _rtreesitter_node_sexp(SEXP);
-extern SEXP _rtreesitter_parser_field_id_for_name(SEXP, SEXP);
-extern SEXP _rtreesitter_parser_new(SEXP);
-extern SEXP _rtreesitter_parser_parse(SEXP, SEXP);
-extern SEXP _rtreesitter_query_captures(SEXP, SEXP);
-extern SEXP _rtreesitter_query_new(SEXP, SEXP);
-extern SEXP _rtreesitter_tree_root(SEXP);
-extern SEXP _rtreesitter_tree_sexp(SEXP);
-
 static const R_CallMethodDef CallEntries[] = {
     {"_rtreesitter_node_child_by_field_id",     (DL_FUNC) &_rtreesitter_node_child_by_field_id,     2},
     {"_rtreesitter_node_child_by_field_name",   (DL_FUNC) &_rtreesitter_node_child_by_field_name,   2},
@@ -184,7 +164,8 @@ static const R_CallMethodDef CallEntries[] = {
 };
 }
 
-extern "C" void R_init_rtreesitter(DllInfo* dll){
+extern "C" attribute_visible void R_init_rtreesitter(DllInfo* dll){
   R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
   R_useDynamicSymbols(dll, FALSE);
+  R_forceSymbols(dll, TRUE);
 }

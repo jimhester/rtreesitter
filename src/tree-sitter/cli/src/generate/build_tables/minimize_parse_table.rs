@@ -200,9 +200,6 @@ impl<'a> Minimizer<'a> {
         right_state: &ParseState,
         group_ids_by_state_id: &Vec<ParseStateId>,
     ) -> bool {
-        if left_state.is_non_terminal_extra != right_state.is_non_terminal_extra {
-            return true;
-        }
         for (token, left_entry) in &left_state.terminal_entries {
             if let Some(right_entry) = right_state.terminal_entries.get(token) {
                 if self.entries_conflict(
@@ -369,6 +366,14 @@ impl<'a> Minimizer<'a> {
         existing_tokens: impl Iterator<Item = &'b Symbol>,
         new_token: Symbol,
     ) -> bool {
+        if new_token == Symbol::end_of_nonterminal_extra() {
+            info!(
+                "split states {} {} - end of non-terminal extra",
+                left_id, right_id,
+            );
+            return true;
+        }
+
         // Do not add external tokens; they could conflict lexically with any of the state's
         // existing lookahead tokens.
         if new_token.is_external() {
@@ -474,7 +479,7 @@ impl<'a> Minimizer<'a> {
     fn reorder_states_by_descending_size(&mut self) {
         // Get a mapping of old state index -> new_state_index
         let mut old_ids_by_new_id = (0..self.parse_table.states.len()).collect::<Vec<_>>();
-        &old_ids_by_new_id.sort_unstable_by_key(|i| {
+        old_ids_by_new_id.sort_unstable_by_key(|i| {
             // Don't changes states 0 (the error state) or 1 (the start state).
             if *i <= 1 {
                 return *i as i64 - 1_000_000;

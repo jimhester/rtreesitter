@@ -7,7 +7,6 @@ const SIZE_OF_RANGE = 2 * SIZE_OF_INT + 2 * SIZE_OF_POINT;
 const ZERO_POINT = {row: 0, column: 0};
 const QUERY_WORD_REGEX = /[\w-.]*/g;
 
-const PREDICATE_STEP_TYPE_DONE = 0;
 const PREDICATE_STEP_TYPE_CAPTURE = 1;
 const PREDICATE_STEP_TYPE_STRING = 2;
 
@@ -18,24 +17,15 @@ var MIN_COMPATIBLE_VERSION;
 var TRANSFER_BUFFER;
 var currentParseCallback;
 var currentLogCallback;
-var initPromise = new Promise(resolve => {
-  Module.onRuntimeInitialized = resolve
-}).then(() => {
-  TRANSFER_BUFFER = C._ts_init();
-  VERSION = getValue(TRANSFER_BUFFER, 'i32');
-  MIN_COMPATIBLE_VERSION = getValue(TRANSFER_BUFFER + SIZE_OF_INT, 'i32');
-});
 
-class Parser {
+class ParserImpl {
   static init() {
-    return initPromise;
+    TRANSFER_BUFFER = C._ts_init();
+    VERSION = getValue(TRANSFER_BUFFER, 'i32');
+    MIN_COMPATIBLE_VERSION = getValue(TRANSFER_BUFFER + SIZE_OF_INT, 'i32');
   }
 
-  constructor() {
-    if (TRANSFER_BUFFER == null) {
-      throw new Error('You must first call Parser.init() and wait for it to resolve.');
-    }
-
+  initialize() {
     C._ts_parser_new_wasm();
     this[0] = getValue(TRANSFER_BUFFER, 'i32');
     this[1] = getValue(TRANSFER_BUFFER + SIZE_OF_INT, 'i32');
@@ -124,7 +114,7 @@ class Parser {
   }
 
   reset() {
-    C._ts_parser_parse_wasm(this[0]);
+    C._ts_parser_reset(this[0]);
   }
 
   setTimeoutMicros(timeout) {
@@ -258,11 +248,7 @@ class Node {
   }
 
   equals(other) {
-    if (this === other) return true;
-    for (let i = 0; i < 5; i++) {
-      if (this[i] !== other[i]) return false;
-    }
-    return true;
+    return this.id === other.id;
   }
 
   child(index) {
@@ -367,7 +353,7 @@ class Node {
     }
 
     // Copy the array of symbols to the WASM heap.
-    const symbolsAddress = C._malloc(SIZE_OF_INT * symbols.count);
+    const symbolsAddress = C._malloc(SIZE_OF_INT * symbols.length);
     for (let i = 0, n = symbols.length; i < n; i++) {
       setValue(symbolsAddress + i * SIZE_OF_INT, symbols[i], 'i32');
     }
@@ -651,6 +637,32 @@ class Language {
     return this.fields[fieldId] || null;
   }
 
+  idForNodeType(type, named) {
+    const typeLength = lengthBytesUTF8(type);
+    const typeAddress = C._malloc(typeLength + 1);
+    stringToUTF8(type, typeAddress, typeLength + 1);
+    const result = C._ts_language_symbol_for_name(this[0], typeAddress, typeLength, named);
+    C._free(typeAddress);
+    return result || null;
+  }
+
+  get nodeTypeCount() {
+    return C._ts_language_symbol_count(this[0]);
+  }
+
+  nodeTypeForId(typeId) {
+    const name = C._ts_language_symbol_name(this[0], typeId);
+    return name ? UTF8ToString(name) : null;
+  }
+
+  nodeTypeIsNamed(typeId) {
+    return C._ts_language_type_is_named_wasm(this[0], typeId) ? true : false;
+  }
+
+  nodeTypeIsVisible(typeId) {
+    return C._ts_language_type_is_visible_wasm(this[0], typeId) ? true : false;
+  }
+
   query(source) {
     const sourceLength = lengthBytesUTF8(source);
     const sourceAddress = C._malloc(sourceLength + 1);
@@ -773,6 +785,7 @@ class Language {
                     if (c.name === captureName1) node1 = c.node;
                     if (c.name === captureName2) node2 = c.node;
                   }
+                  if(node1 === undefined || node2 === undefined) return true;
                   return (node1.text === node2.text) === isPositive;
                 });
               } else {
@@ -784,7 +797,7 @@ class Language {
                       return (c.node.text === stringValue) === isPositive;
                     };
                   }
-                  return false;
+                  return true;
                 });
               }
               break;
@@ -807,7 +820,7 @@ class Language {
                 for (const c of captures) {
                   if (c.name === captureName) return regex.test(c.node.text) === isPositive;
                 }
-                return false;
+                return true;
               });
               break;
 
@@ -861,30 +874,41 @@ class Language {
     );
   }
 
-  static load(url) {
+  static load(input) {
     let bytes;
-    if (
-      typeof process !== 'undefined' &&
-      process.versions &&
-      process.versions.node
-    ) {
-      const fs = require('fs');
-      bytes = Promise.resolve(fs.readFileSync(url));
+    if (input instanceof Uint8Array) {
+      bytes = Promise.resolve(input);
     } else {
-      bytes = fetch(url)
-        .then(response => response.arrayBuffer()
-          .then(buffer => {
-            if (response.ok) {
-              return new Uint8Array(buffer);
-            } else {
-              const body = new TextDecoder('utf-8').decode(buffer);
-              throw new Error(`Language.load failed with status ${response.status}.\n\n${body}`)
-            }
-          }));
+      const url = input;
+      if (
+        typeof process !== 'undefined' &&
+        process.versions &&
+        process.versions.node
+      ) {
+        const fs = require('fs');
+        bytes = Promise.resolve(fs.readFileSync(url));
+      } else {
+        bytes = fetch(url)
+          .then(response => response.arrayBuffer()
+            .then(buffer => {
+              if (response.ok) {
+                return new Uint8Array(buffer);
+              } else {
+                const body = new TextDecoder('utf-8').decode(buffer);
+                throw new Error(`Language.load failed with status ${response.status}.\n\n${body}`)
+              }
+            }));
+      }
     }
 
+    // emscripten-core/emscripten#12969
+    const loadModule =
+      typeof loadSideModule === 'function'
+      ? loadSideModule
+      : loadWebAssemblyModule;
+
     return bytes
-      .then(bytes => loadWebAssemblyModule(bytes, {loadAsync: true}))
+      .then(bytes => loadModule(bytes, {loadAsync: true}))
       .then(mod => {
         const symbolNames = Object.keys(mod)
         const functionName = symbolNames.find(key =>
@@ -913,6 +937,7 @@ class Query {
     this.setProperties = setProperties;
     this.assertedProperties = assertedProperties;
     this.refutedProperties = refutedProperties;
+    this.exceededMatchLimit = false;
   }
 
   delete() {
@@ -920,9 +945,17 @@ class Query {
     this[0] = 0;
   }
 
-  matches(node, startPosition, endPosition) {
+  matches(node, startPosition, endPosition, options) {
     if (!startPosition) startPosition = ZERO_POINT;
     if (!endPosition) endPosition = ZERO_POINT;
+    if (!options) options = {};
+
+    let matchLimit = options.matchLimit;
+    if (typeof matchLimit === 'undefined') {
+      matchLimit = 0;
+    } else if (typeof matchLimit !== 'number') {
+      throw new Error('Arguments must be numbers');
+    }
 
     marshalNode(node);
 
@@ -932,15 +965,19 @@ class Query {
       startPosition.row,
       startPosition.column,
       endPosition.row,
-      endPosition.column
+      endPosition.column,
+      matchLimit
     );
 
-    const count = getValue(TRANSFER_BUFFER, 'i32');
+    const rawCount = getValue(TRANSFER_BUFFER, 'i32');
     const startAddress = getValue(TRANSFER_BUFFER + SIZE_OF_INT, 'i32');
-    const result = new Array(count);
+    const didExceedMatchLimit = getValue(TRANSFER_BUFFER + 2 * SIZE_OF_INT, 'i32');
+    const result = new Array(rawCount);
+    this.exceededMatchLimit = !!didExceedMatchLimit;
 
+    let filteredCount = 0;
     let address = startAddress;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < rawCount; i++) {
       const pattern = getValue(address, 'i32');
       address += SIZE_OF_INT;
       const captureCount = getValue(address, 'i32');
@@ -949,7 +986,7 @@ class Query {
       const captures = new Array(captureCount);
       address = unmarshalCaptures(this, node.tree, address, captures);
       if (this.textPredicates[pattern].every(p => p(captures))) {
-        result[i] = {pattern, captures};
+        result[filteredCount++] = {pattern, captures};
         const setProperties = this.setProperties[pattern];
         if (setProperties) result[i].setProperties = setProperties;
         const assertedProperties = this.assertedProperties[pattern];
@@ -958,14 +995,23 @@ class Query {
         if (refutedProperties) result[i].refutedProperties = refutedProperties;
       }
     }
+    result.length = filteredCount;
 
     C._free(startAddress);
     return result;
   }
 
-  captures(node, startPosition, endPosition) {
+  captures(node, startPosition, endPosition, options) {
     if (!startPosition) startPosition = ZERO_POINT;
     if (!endPosition) endPosition = ZERO_POINT;
+    if (!options) options = {};
+
+    let matchLimit = options.matchLimit;
+    if (typeof matchLimit === 'undefined') {
+      matchLimit = 0;
+    } else if (typeof matchLimit !== 'number') {
+      throw new Error('Arguments must be numbers');
+    }
 
     marshalNode(node);
 
@@ -975,12 +1021,15 @@ class Query {
       startPosition.row,
       startPosition.column,
       endPosition.row,
-      endPosition.column
+      endPosition.column,
+      matchLimit
     );
 
     const count = getValue(TRANSFER_BUFFER, 'i32');
     const startAddress = getValue(TRANSFER_BUFFER + SIZE_OF_INT, 'i32');
+    const didExceedMatchLimit = getValue(TRANSFER_BUFFER + 2 * SIZE_OF_INT, 'i32');
     const result = [];
+    this.exceededMatchLimit = !!didExceedMatchLimit;
 
     const captures = [];
     let address = startAddress;
@@ -1013,6 +1062,10 @@ class Query {
 
   predicatesForPattern(patternIndex) {
     return this.predicates[patternIndex]
+  }
+
+  didExceedMatchLimit() {
+    return this.exceededMatchLimit;
   }
 }
 
@@ -1142,9 +1195,3 @@ function marshalEdit(edit) {
   setValue(address, edit.oldEndIndex, 'i32'); address += SIZE_OF_INT;
   setValue(address, edit.newEndIndex, 'i32'); address += SIZE_OF_INT;
 }
-
-Parser.Language = Language;
-
-return Parser;
-
-}));
